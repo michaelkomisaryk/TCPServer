@@ -15,11 +15,14 @@ def run_server():
             request_text = request_bytes.decode('utf-8')
             print(f'Revived HTTP request: {request_text}')
 
+            body = 'Hello World'
+
             http_response = (
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: text/plain; charset=utf-8\r\n"
-                "Connection: close\r\n\r\n"
-                "Hello from raw socket server!"
+                f'Content-Length: {len(body)}\r\n'
+                'Connection: close\r\n\r\n' + body
+
             )
             client_socket.sendall(http_response.encode('utf-8'))
         client_socket.close()
