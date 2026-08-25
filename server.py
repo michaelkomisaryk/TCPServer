@@ -12,8 +12,14 @@ def run_server():
         client_socket, client_address = server_socket.accept()
         request_bytes = client_socket.recv(1024)
         if request_bytes:
-            request_text = request_bytes.decode('utf-8')
-            print(f'Revived HTTP request: {request_text}')
+            request_text   = request_bytes.decode('utf-8')
+            first_line = request_text.splitlines()[0]
+            parts = first_line.split()
+            if len(parts) >= 2:
+                method = parts[0]
+                path = parts[1]
+                print(f"Method: {method}")
+                print(f"Path: {path}")
 
             body = 'Hello World'
 
