@@ -15,13 +15,21 @@ def run_server():
             request_text   = request_bytes.decode('utf-8')
             first_line = request_text.splitlines()[0]
             parts = first_line.split()
+            path = "/"
             if len(parts) >= 2:
                 method = parts[0]
                 path = parts[1]
                 print(f"Method: {method}")
                 print(f"Path: {path}")
 
-            body = 'Hello World'
+            if path == "/":
+                body = "Home Page"
+            elif path == "/hello":
+                body = "Hello"
+            elif path == "/about":
+                body = "About Page"
+            else:
+                body = "Some another"
 
             http_response = (
                 "HTTP/1.1 200 OK\r\n"
