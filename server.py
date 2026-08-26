@@ -29,7 +29,7 @@ def run_server():
             elif path == "/about":
                 body = "About Page"
             else:
-                body = "Some another"
+                body = "404 Not Found"
 
             http_response = (
                 "HTTP/1.1 200 OK\r\n"
