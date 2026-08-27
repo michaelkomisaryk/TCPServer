@@ -13,7 +13,12 @@ def run_server():
         request_bytes = client_socket.recv(1024)
         if request_bytes:
             request_text   = request_bytes.decode('utf-8')
-            first_line = request_text.splitlines()[0]
+            lines = request_text.splitlines()
+            if not lines:
+                client_socket.close()
+                continue
+
+            first_line = lines[0]
             parts = first_line.split()
             path = "/"
             if len(parts) >= 2:
@@ -21,6 +26,18 @@ def run_server():
                 path = parts[1]
                 print(f"Method: {method}")
                 print(f"Path: {path}")
+
+            headers = {}
+            for line in lines[1:]:
+                if line == "":
+                    break
+                if ":" in line:
+                    name, value = line.split(":", 1)
+                    headers[name.strip()] = value.strip()
+
+            print("Headers:", headers)
+            if "Host" in headers:
+                print(f"Host Header: {headers['Host']}")
 
             if path == "/":
                 body = "Home Page"
