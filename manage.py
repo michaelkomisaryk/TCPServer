@@ -13,10 +13,14 @@ def main():
             self.name = name
             self.age = age
 
+        def introduce(self):
+            print(f'Hello, my name is {self.name} and I am {self.age} years old.')
     user = User("Alex", 16)
     user1 = User("jon", 20)
     user2 = User("anna", 25)
-    print(f'{user.name}\n{user1.name}\n{user2.name}')
+    user.introduce()
+    user1.introduce()
+    user2.introduce()
 
 
     """Run administrative tasks."""
