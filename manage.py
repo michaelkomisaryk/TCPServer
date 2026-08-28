@@ -2,9 +2,21 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from symtable import Class
 
 
 def main():
+
+
+    class User:
+        def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+    user = User("Alex", 16)
+    print(f'{user.name}\n{user.age}')
+
+
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
     try:
