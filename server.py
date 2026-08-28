@@ -1,5 +1,12 @@
 import socket
 
+class HttpRequest:
+    def __init__(self, method, path, headers, body):
+        self.method = method
+        self.path = path
+        self.headers = headers
+        self.body = body
+
 def run_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -35,7 +42,9 @@ def run_server():
                     name, value = line.split(":", 1)
                     headers[name.strip()] = value.strip()
 
-            print("Headers:", headers)
+
+
+
             if "Host" in headers:
                 print(f"Host Header: {headers['Host']}")
 
@@ -47,6 +56,18 @@ def run_server():
                 body = "About Page"
             else:
                 body = "404 Not Found"
+
+            request = HttpRequest(
+                method=method,
+                path=path,
+                headers=headers,
+                body=body
+            )
+
+            print(f"Method: {request.method}")
+            print(f"Path: {request.path}")
+            print(f"Headers: {request.headers}")
+            print(f"Body: {request.body}")
 
             http_response = (
                 "HTTP/1.1 200 OK\r\n"
