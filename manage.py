@@ -14,7 +14,9 @@ def main():
             self.age = age
 
     user = User("Alex", 16)
-    print(f'{user.name}\n{user.age}')
+    user1 = User("jon", 20)
+    user2 = User("anna", 25)
+    print(f'{user.name}\n{user1.name}\n{user2.name}')
 
 
     """Run administrative tasks."""
