@@ -119,6 +119,14 @@ def users_handler(request):
     )
 
 
+def get_users_handler(request):
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+        body=json.dumps(users)
+    )
+
+
 class Router:
     def __init__(self):
         self.routes = {}
@@ -153,6 +161,7 @@ def run_server():
     router.add_route("GET", "/about", about_handler)
     router.add_route("GET", "/api/info", api_info_handler)
     router.add_route("POST", "/users", users_handler)
+    router.add_route("GET", "/users", get_users_handler)
 
     server_socket = socket.socket(
         socket.AF_INET,
