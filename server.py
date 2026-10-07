@@ -86,6 +86,25 @@ def api_info_handler(request):
     )
 
 
+def users_handler(request):
+    data = json.loads(request.body)
+
+    name = data["name"]
+    age = data["age"]
+
+    print(f"Name: {name}")
+    print(f"Age: {age}")
+
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+        body=json.dumps({
+            "name": name,
+            "age": age
+        })
+    )
+
+
 class Router:
     def __init__(self):
         self.routes = {}
@@ -119,6 +138,7 @@ def run_server():
     router.add_route("GET", "/hello", hello_handler)
     router.add_route("GET", "/about", about_handler)
     router.add_route("GET", "/api/info", api_info_handler)
+    router.add_route("POST", "/users", users_handler)
 
     server_socket = socket.socket(
         socket.AF_INET,
@@ -142,28 +162,26 @@ def run_server():
     while True:
         client_socket, client_address = server_socket.accept()
 
-        request_bytes = client_socket.recv(1024)
+        request_bytes = b""
+
+        while b"\r\n\r\n" not in request_bytes:
+            chunk = client_socket.recv(1024)
+
+            if not chunk:
+                break
+
+            request_bytes += chunk
 
         if not request_bytes:
             client_socket.close()
             continue
 
-        request_text = request_bytes.decode("utf-8")
+        header_bytes, _, body_bytes = request_bytes.partition(
+            b"\r\n\r\n"
+        )
 
-        request_parts = request_text.split("\r\n\r\n", 1)
-
-        header_text = request_parts[0]
-
-        if len(request_parts) > 1:
-            body = request_parts[1]
-        else:
-            body = None
-
+        header_text = header_bytes.decode("utf-8")
         lines = header_text.split("\r\n")
-
-        if not lines:
-            client_socket.close()
-            continue
 
         first_line = lines[0]
         parts = first_line.split()
@@ -181,6 +199,22 @@ def run_server():
             if ":" in line:
                 name, value = line.split(":", 1)
                 headers[name.strip()] = value.strip()
+
+        content_length = int(
+            headers.get("Content-Length", 0)
+        )
+
+        while len(body_bytes) < content_length:
+            chunk = client_socket.recv(
+                content_length - len(body_bytes)
+            )
+
+            if not chunk:
+                break
+
+            body_bytes += chunk
+
+        body = body_bytes.decode("utf-8")
 
         request = HttpRequest(
             method=method,
