@@ -127,6 +127,26 @@ def get_users_handler(request):
     )
 
 
+def get_user_handler(request):
+    user_id = int(request.path.split("/")[-1])
+
+    for user in users:
+        if user["id"] == user_id:
+            return HttpResponse(
+                status_code=200,
+                headers={"Content-Type": "application/json"},
+                body=json.dumps(user)
+            )
+
+    return HttpResponse(
+        status_code=404,
+        headers={"Content-Type": "application/json"},
+        body=json.dumps({
+            "error": "User not found"
+        })
+    )
+
+
 class Router:
     def __init__(self):
         self.routes = {}
@@ -135,6 +155,9 @@ class Router:
         self.routes[(method, path)] = handler
 
     def find_route(self, method, path):
+        if method == "GET" and path.startswith("/users/"):
+            return get_user_handler
+
         return self.routes.get((method, path))
 
     def handle(self, request):
