@@ -2,6 +2,9 @@ import socket
 import json
 
 
+users = []
+
+
 class HttpRequest:
     def __init__(self, method, path, headers=None, body=None):
         self.method = method
@@ -25,6 +28,8 @@ class HttpResponse:
     def to_http_text(self):
         status_messages = {
             200: "OK",
+            201: "Created",
+            400: "Bad Request",
             404: "Not Found"
         }
 
@@ -77,31 +82,40 @@ def api_info_handler(request):
         "version": "1.0"
     }
 
-    body = json.dumps(data)
-
     return HttpResponse(
         status_code=200,
         headers={"Content-Type": "application/json"},
-        body=body
+        body=json.dumps(data)
     )
 
 
 def users_handler(request):
     data = json.loads(request.body)
 
-    name = data["name"]
-    age = data["age"]
+    if "name" not in data:
+        return HttpResponse(
+            status_code=400,
+            headers={"Content-Type": "application/json"},
+            body=json.dumps({
+                "error": "Name is required"
+            })
+        )
 
-    print(f"Name: {name}")
-    print(f"Age: {age}")
+    new_user = {
+        "id": len(users) + 1,
+        "name": data["name"],
+        "age": data.get("age")
+    }
+
+    users.append(new_user)
+
+    print(f"Created user: {new_user}")
+    print(f"Users: {users}")
 
     return HttpResponse(
-        status_code=200,
+        status_code=201,
         headers={"Content-Type": "application/json"},
-        body=json.dumps({
-            "name": name,
-            "age": age
-        })
+        body=json.dumps(new_user)
     )
 
 
