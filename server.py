@@ -1,4 +1,6 @@
 import socket
+import json
+
 
 class HttpRequest:
     def __init__(self, method, path, headers=None, body=None):
@@ -7,95 +9,198 @@ class HttpRequest:
         self.headers = headers if headers is not None else {}
         self.body = body
 
+    def print_info(self):
+        print(f"Method: {self.method}")
+        print(f"Path: {self.path}")
+        print(f"Headers: {self.headers}")
+        print(f"Body: {self.body}")
+
+
+class HttpResponse:
+    def __init__(self, status_code, headers=None, body=""):
+        self.status_code = status_code
+        self.headers = headers if headers is not None else {}
+        self.body = body
+
+    def to_http_text(self):
+        status_messages = {
+            200: "OK",
+            404: "Not Found"
+        }
+
+        status_message = status_messages.get(self.status_code, "")
+
+        self.headers["Content-Length"] = str(
+            len(self.body.encode("utf-8"))
+        )
+
+        response_text = (
+            f"HTTP/1.1 {self.status_code} {status_message}\r\n"
+        )
+
+        for name, value in self.headers.items():
+            response_text += f"{name}: {value}\r\n"
+
+        response_text += "\r\n"
+        response_text += self.body
+
+        return response_text
+
+
+def home_handler(request):
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "text/plain; charset=utf-8"},
+        body="Home Page"
+    )
+
+
+def hello_handler(request):
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "text/plain; charset=utf-8"},
+        body="Hello"
+    )
+
+
+def about_handler(request):
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "text/plain; charset=utf-8"},
+        body="About Page"
+    )
+
+
+def api_info_handler(request):
+    data = {
+        "name": "My Python Server",
+        "version": "1.0"
+    }
+
+    body = json.dumps(data)
+
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+        body=body
+    )
+
+
+class Router:
+    def __init__(self):
+        self.routes = {}
+
+    def add_route(self, method, path, handler):
+        self.routes[(method, path)] = handler
+
+    def find_route(self, method, path):
+        return self.routes.get((method, path))
+
+    def handle(self, request):
+        handler = self.find_route(
+            request.method,
+            request.path
+        )
+
+        if handler is None:
+            return HttpResponse(
+                status_code=404,
+                headers={"Content-Type": "text/plain; charset=utf-8"},
+                body="404 Not Found"
+            )
+
+        return handler(request)
+
+
 def run_server():
+    router = Router()
 
+    router.add_route("GET", "/", home_handler)
+    router.add_route("GET", "/hello", hello_handler)
+    router.add_route("GET", "/about", about_handler)
+    router.add_route("GET", "/api/info", api_info_handler)
 
-    request1 = HttpRequest("GET", "/users")
-    request2 = HttpRequest("GET", "/about")
-    request3 = HttpRequest("POST", "/users", body='{"name": "Alex"}')
+    server_socket = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM
+    )
 
-    print(f"Request 1: {request1.method} {request1.path}")
-    print(f"Request 2: {request2.method} {request2.path}")
-    print(f"Request 3: {request3.method} {request3.path}")
-    print(f"Request 3 Body: {request3.body}")
+    server_socket.setsockopt(
+        socket.SOL_SOCKET,
+        socket.SO_REUSEADDR,
+        1
+    )
 
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    HOST = 'localhost'
+    HOST = "localhost"
     PORT = 8080
+
     server_socket.bind((HOST, PORT))
     server_socket.listen(1)
-    print(f'Server start working on {HOST}:{PORT} ')
+
+    print(f"Server started on http://{HOST}:{PORT}")
+
     while True:
         client_socket, client_address = server_socket.accept()
+
         request_bytes = client_socket.recv(1024)
-        if request_bytes:
-            request_text   = request_bytes.decode('utf-8')
-            lines = request_text.splitlines()
-            if not lines:
-                client_socket.close()
-                continue
 
-            first_line = lines[0]
-            parts = first_line.split()
-            path = "/"
-            if len(parts) >= 2:
-                method = parts[0]
-                path = parts[1]
-                print(f"Method: {method}")
-                print(f"Path: {path}")
+        if not request_bytes:
+            client_socket.close()
+            continue
 
-            headers = {}
-            req_body = None
-            body_parts = request_text.split('\r\n\r\n', 1)
-            if len(body_parts) > 1:
-                req_body = body_parts[1]
+        request_text = request_bytes.decode("utf-8")
 
-            for line in lines[1:]:
-                if line == "":
-                    break
-                if ":" in line:
-                    name, value = line.split(":", 1)
-                    headers[name.strip()] = value.strip()
+        request_parts = request_text.split("\r\n\r\n", 1)
 
+        header_text = request_parts[0]
 
+        if len(request_parts) > 1:
+            body = request_parts[1]
+        else:
+            body = None
 
+        lines = header_text.split("\r\n")
 
-            if "Host" in headers:
-                print(f"Host Header: {headers['Host']}")
+        if not lines:
+            client_socket.close()
+            continue
 
-            request = HttpRequest(
-                method=method,
-                path=path,
-                headers=headers,
-                body=req_body
-            )
+        first_line = lines[0]
+        parts = first_line.split()
 
-            print(f"Method: {request.method}")
-            print(f"Path: {request.path}")
-            print(f"Headers: {request.headers}")
-            print(f"Body: {request.body}")
+        if len(parts) < 2:
+            client_socket.close()
+            continue
 
-            if path == "/":
-                resp_body = "Home Page"
-            elif path == "/hello":
-                resp_body = "Hello"
-            elif path == "/about":
-                resp_body = "About Page"
-            else:
-                resp_body = "404 Not Found"
+        method = parts[0]
+        path = parts[1]
 
-            http_response = (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/plain; charset=utf-8\r\n"
-                f'Content-Length: {len(resp_body)}\r\n'
-                'Connection: close\r\n\r\n' + resp_body
+        headers = {}
 
-            )
-            client_socket.sendall(http_response.encode('utf-8'))
+        for line in lines[1:]:
+            if ":" in line:
+                name, value = line.split(":", 1)
+                headers[name.strip()] = value.strip()
+
+        request = HttpRequest(
+            method=method,
+            path=path,
+            headers=headers,
+            body=body
+        )
+
+        request.print_info()
+
+        response = router.handle(request)
+
+        http_text = response.to_http_text()
+
+        client_socket.sendall(
+            http_text.encode("utf-8")
+        )
+
         client_socket.close()
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_server()
