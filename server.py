@@ -172,6 +172,30 @@ def update_user_handler(request):
     )
 
 
+def delete_user_handler(request):
+    user_id = int(request.path.split("/")[-1])
+
+    for user in users:
+        if user["id"] == user_id:
+            users.remove(user)
+
+            return HttpResponse(
+                status_code=200,
+                headers={"Content-Type": "application/json"},
+                body=json.dumps({
+                    "message": "User deleted"
+                })
+            )
+
+    return HttpResponse(
+        status_code=404,
+        headers={"Content-Type": "application/json"},
+        body=json.dumps({
+            "error": "User not found"
+        })
+    )
+
+
 class Router:
     def __init__(self):
         self.routes = {}
@@ -185,6 +209,9 @@ class Router:
 
         if method == "PUT" and path.startswith("/users/"):
             return update_user_handler
+
+        if method == "DELETE" and path.startswith("/users/"):
+            return delete_user_handler
 
         return self.routes.get((method, path))
 
