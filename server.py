@@ -30,6 +30,7 @@ class HttpResponse:
             200: "OK",
             201: "Created",
             400: "Bad Request",
+            401: "Unauthorized",
             404: "Not Found"
         }
 
@@ -196,6 +197,28 @@ def delete_user_handler(request):
     )
 
 
+def profile_handler(request):
+    authorization = request.headers.get("Authorization")
+
+    if authorization != "Bearer secret123":
+        return HttpResponse(
+            status_code=401,
+            headers={"Content-Type": "application/json"},
+            body=json.dumps({
+                "error": "Unauthorized"
+            })
+        )
+
+    return HttpResponse(
+        status_code=200,
+        headers={"Content-Type": "application/json"},
+        body=json.dumps({
+            "id": 1,
+            "name": "Alex"
+        })
+    )
+
+
 class Router:
     def __init__(self):
         self.routes = {}
@@ -240,6 +263,7 @@ def run_server():
     router.add_route("GET", "/api/info", api_info_handler)
     router.add_route("POST", "/users", users_handler)
     router.add_route("GET", "/users", get_users_handler)
+    router.add_route("GET", "/profile", profile_handler)
 
     server_socket = socket.socket(
         socket.AF_INET,
